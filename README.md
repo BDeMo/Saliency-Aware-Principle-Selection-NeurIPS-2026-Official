@@ -2,6 +2,8 @@
 
 Official implementation of **Saliency-Aware Principle Selection (SAP)**, accepted at **NeurIPS 2026**.
 
+[Project page](https://bdemo.github.io/Saliency-Aware-Principle-Selection-NeurIPS-2026-Official/) · [Paper](website/paper.pdf)
+
 SAP is a training-free inference-time scaling method for vision-language reasoning. Instead of extending one increasingly text-dominated chain, SAP evolves a population of short reasoning principles, generates independent routes from the original image and prompt, and uses visual grounding as advisory evidence for selecting the next generation.
 
 ## Highlights
@@ -88,6 +90,10 @@ The main settings live under `services.proxy_sap.env` in `cfg/launcher.yaml`:
 - `TAU`: number of independent routes per principle.
 - `CONS_W`, `DIV_W`, `UNC_W`, `EVID_W`: route-level fitness weights.
 - `MAX_MASKS`: maximum grounded objects retained per image.
+
+## License
+
+The project code is released under the [MIT License](LICENSE). Third-party models and datasets retain their own licenses.
 
 ## Citation
 
