@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite the NeurIPS 2026 paper."
+title: "Saliency-Aware Multi-Route Thinking: Grounding and Reasoning on Vision-Language Agents"
+type: conference-paper
+authors:
+  - family-names: Shi
+    given-names: Mingjia
+  - family-names: He
+    given-names: Yinhan
+  - family-names: Zhu
+    given-names: Yaochen
+  - family-names: Dong
+    given-names: Cassie
+  - family-names: Li
+    given-names: Jundong
+conference:
+  name: Neural Information Processing Systems
+  year: 2026
+repository-code: "https://github.com/BDeMo/Saliency-Aware-Principle-Selection-NeurIPS-2026-Official"
+date-released: 2026-11-04
+

@@ -1,0 +1,616 @@
+# launcher.yaml (FULL VERSION) - SAP v3 stack (DISCRETE LEVELS)
+# - 8030: proxy_sap (run.sap:app)
+# - 8040: sap_clean (run.sap_clean:app)
+#
+# This version:
+# - Uses TAU (NOT PATHS_K)
+# - Does not rely on routes_perspective module logic
+# - Discretizes consensus/diversity/uncertainty as {'low','medium','high'}
+# - Fitness uses internal mapping; expose only discrete levels in traces
+
+ports:
+  vllm_instruct: 8001
+  vllm_thinking: 8002
+  thinking_clean: 8003
+  instruct_clean: 8004
+
+  sam_amg: 8010
+  proxy_qwen_sam: 8020
+
+  sap: 8030
+  sap_clean: 8040
+
+  # ===== new: 4B =====
+  vllm_instruct_4b: 8101
+  vllm_thinking_4b: 8102
+
+  # ===== new: 2B =====
+  vllm_instruct_2b: 8201
+  vllm_thinking_2b: 8202
+
+  # ===== new: 4B clean =====
+  thinking_clean_4b: 8103
+  instruct_clean_4b: 8104
+
+  # ===== new: 2B clean =====
+  thinking_clean_2b: 8203
+  instruct_clean_2b: 8204
+
+services:
+  # =========================
+  # vLLM backends
+  # =========================
+  vllm_qwen3_vl_4b_instruct:
+    kind: vllm
+    enable: true
+    model_path: checkpoints/Qwen3-VL-4B-Instruct
+    served_model_name: Qwen3-VL-4B-Instruct
+    port_ref: vllm_instruct_4b
+    tensor_parallel_size: 4
+    max_model_len: 262144
+    dtype: auto
+    trust_remote_code: true
+    cuda_visible_devices: "4,5,6,7"
+
+  vllm_qwen3_vl_4b_thinking:
+    kind: vllm
+    enable: true
+    model_path: checkpoints/Qwen3-VL-4B-Thinking
+    served_model_name: Qwen3-VL-4B-Thinking
+    port_ref: vllm_thinking_4b
+    tensor_parallel_size: 4
+    max_model_len: 262144
+    dtype: auto
+    trust_remote_code: true
+    cuda_visible_devices: "0,1,2,3"
+
+  vllm_qwen3_vl_2b_instruct:
+    kind: vllm
+    enable: true
+    model_path: checkpoints/Qwen3-VL-2B-Instruct
+    served_model_name: Qwen3-VL-2B-Instruct
+    port_ref: vllm_instruct_2b
+    tensor_parallel_size: 2
+    max_model_len: 262144
+    dtype: auto
+    trust_remote_code: true
+    cuda_visible_devices: "6,7"
+
+  vllm_qwen3_vl_2b_thinking:
+    kind: vllm
+    enable: true
+    model_path: checkpoints/Qwen3-VL-2B-Thinking
+    served_model_name: Qwen3-VL-2B-Thinking
+    port_ref: vllm_thinking_2b
+    tensor_parallel_size: 2
+    max_model_len: 262144
+    dtype: auto
+    trust_remote_code: true
+    cuda_visible_devices: "0,1"
+
+  vllm_qwen3_vl_8b_instruct:
+    kind: vllm
+    enable: true
+    model_path: checkpoints/Qwen3-VL-8B-Instruct
+    served_model_name: Qwen3-VL-8B-Instruct
+    port_ref: vllm_instruct
+    tensor_parallel_size: 8
+    max_model_len: 262144
+    dtype: auto
+    trust_remote_code: true
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+
+  vllm_qwen3_vl_8b_thinking:
+    kind: vllm
+    enable: true
+    model_path: checkpoints/Qwen3-VL-8B-Thinking
+    served_model_name: Qwen3-VL-8B-Thinking
+    port_ref: vllm_thinking
+    tensor_parallel_size: 8
+    max_model_len: 262144
+    dtype: auto
+    trust_remote_code: true
+    cuda_visible_devices: "0,1,2,3,4,5,6,7"
+
+  # =========================
+  # 8010 SAM AMG
+  # =========================
+  sam_amg:
+    kind: uvicorn
+    enable: true
+    module: run.sam_amg:app
+    host: 0.0.0.0
+    port_ref: sam_amg
+    workers: 1
+    env:
+      MODEL_ID: checkpoints/sam2.1-hiera-large
+      DEVICE_ID: "0"
+      POINTS_PER_BATCH: "64"
+
+  # =========================
+  # 8020: SAM AMG + Qwen labels (NEW fast proxy with bboxes_xyxy)
+  # =========================
+  proxy_qwen_sam:
+    kind: uvicorn
+    enable: true
+    module: run.proxy_qwen_sam:app
+    host: 0.0.0.0
+    port_ref: proxy_qwen_sam
+    workers: 1
+    env:
+      SAM_BASE: "http://127.0.0.1:8010"
+      QWEN_BASE: "http://127.0.0.1:8001"
+      QWEN_PATH: "/v1/chat/completions"
+      QWEN_MODEL: "Qwen3-VL-8B-Instruct"
+      QWEN_TIMEOUT: "120"
+      QWEN_TEMPERATURE: "0.0"
+      QWEN_MAX_TOKENS: "16"
+      BBOX_PAD: "16"
+      BG_MODE: "dark"
+      LABEL_FALLBACK: "object"
+      USE_MASKED_CROP: "0"
+      QWEN_LABEL_MODE: "batch"  # batch | single
+
+  # =========================
+  # 8030: SAP proxy v3 (calls 8020 + 8001) — DISCRETE LEVELS
+  # =========================
+  proxy_sap:
+    kind: uvicorn
+    enable: true
+    module: run.sap:app
+    host: 0.0.0.0
+    port_ref: sap
+    workers: 1
+    env:
+      # -------- upstream services --------
+      GroundingMaskWithLabel_URL: "http://127.0.0.1:8020"
+
+      QWEN_URL: "http://127.0.0.1:8001"
+      QWEN_CHAT_PATH: "/v1/chat/completions"
+      QWEN_MODEL: "Qwen3-VL-8B-Instruct"
+      GROUNDING_IMAGE_MODE: "batch"
+
+
+      # -------- grounding config --------
+      POINTS_PER_BATCH: "64"
+      MAX_MASKS: "3"
+      OVERLAY_ALPHA: "0.35"
+
+      # -------- runtime --------
+      EVO_GENS: "1"
+      TAU: "2"
+      QWEN_TIMEOUT: "120"
+      QWEN_CONCURRENCY: "14"
+
+      # -------- SAP notation --------
+      MU_PLUS_LAMBDA: "4"
+      MU: "2"
+      LAMBDA: "2"
+
+      # -------- DISCRETE fitness weights (integers) --------
+      # consensus_level/diversity_level/uncertainty/evidence_level are all in {low,medium,high}
+      # sap.py maps them internally to ints for sorting elites; traces expose levels only.
+      CONS_W: "1"
+      DIV_W: "1"
+      UNC_W: "1"
+      EVID_W: "1"
+
+      # -------- payload caps --------
+      MAX_OBJECT_TEXT: "24"
+      MAX_IMAGES_TOPK: "8"
+      BBOX_DECIMALS: "3"
+
+      # -------- final aggregator --------
+      USE_FINAL_AGGREGATOR: "0"
+
+      # -------- chunking --------
+      BATCH_OBJECTS: "-1"
+
+  # =========================
+  # 8040: sap_clean wrapper over SAP (OpenAI-compatible)
+  # =========================
+  sap_clean:
+    kind: uvicorn
+    enable: true
+    module: run.sap_clean:app
+    host: 0.0.0.0
+    port_ref: sap_clean
+    workers: 1
+    env:
+      SAP_BASE: "http://127.0.0.1:8030"
+      SAP_VQA_PATH: "/vqa"
+      PROXY_MODEL: "SAPGroundedVQA-8040"
+
+      SAP_INIT_PRINCIPLES_N: "-1"
+      SAP_RETURN_TRACES: "0"
+
+      INCLUDE_REASONS: "0"
+
+      # debug + file
+      DEBUG_SAP_CLEAN: "0"
+      DEBUG_SAP_CLEAN_MAXLEN: "1000"
+      DEBUG_SAP_CLEAN_LOGFILE: "./tmp/sap_clean_debug.jsonl"
+      DEBUG_SAP_CLEAN_LOG_REQUEST: "1"
+      DEBUG_SAP_CLEAN_LOG_RESPONSE: "1"
+
+      # multi-image stitch
+      STITCH_MULTI_IMAGE: "0"   # 0=keep multi-image, 1=stitch into single
+      STITCH_MAX_SIDE: "1536"
+      STITCH_BG: "black"
+
+      # hard fallback
+      EMPTY_FALLBACK: "unknown"
+
+      # safety output
+      BENCHMARK_SAFE: "1"
+      BENCHMARK_SAFE_MODE: "auto"
+      MAX_FINAL_CHARS: "128"
+
+      # proxy timeouts / retries
+      CONCURRENCY: "128"
+      TIMEOUT_CONNECT_S: "10"
+      TIMEOUT_READ_S: "900"
+      TIMEOUT_WRITE_S: "30"
+      TIMEOUT_POOL_S: "10"
+      UPSTREAM_MAX_RETRIES: "2"
+      UPSTREAM_RETRY_BACKOFF_S: "0.6"
+
+  # =========================
+  # 8003: thinking_clean (calls 8002)
+  # =========================
+  thinking_clean:
+    kind: uvicorn
+    enable: true
+    module: run.thinking_clean:app
+    host: 0.0.0.0
+    port_ref: thinking_clean
+    workers: 1
+    env:
+      UPSTREAM_BASE: "http://127.0.0.1:8002"
+      UPSTREAM_PATH: "/v1/chat/completions"
+      UPSTREAM_MODEL: "Qwen3-VL-8B-Thinking"
+      PROXY_MODEL: "thinking-clean"
+      STRIP_MODE: "auto"
+      CONCURRENCY: "32"
+      TIMEOUT_S: "180"
+
+      EMPTY_FALLBACK: "unknown"
+      BENCHMARK_SAFE: "1"
+      BENCHMARK_SAFE_MODE: "auto"
+      MAX_FINAL_CHARS: "256"
+
+      DEBUG_THINKING_CLEAN: "1"
+      DEBUG_THINKING_CLEAN_MAXLEN: "4000"
+      DEBUG_THINKING_CLEAN_LOGFILE: "./tmp/thinking_clean_debug.jsonl"
+      DEBUG_THINKING_CLEAN_LOG_REQUEST: ""
+      DEBUG_THINKING_CLEAN_LOG_RESPONSE: "1"
+
+      TIMEOUT_CONNECT_S: "10"
+      TIMEOUT_READ_S: "900"
+      TIMEOUT_WRITE_S: "30"
+      TIMEOUT_POOL_S: "10"
+
+      UPSTREAM_MAX_RETRIES: "2"
+      UPSTREAM_RETRY_BACKOFF_S: "0.6"
+
+  # =========================
+  # 8004 instruct_clean (calls 8001)
+  # =========================
+  instruct_clean:
+    kind: uvicorn
+    enable: true
+    module: run.instruct_clean:app
+    host: 0.0.0.0
+    port_ref: instruct_clean
+    workers: 1
+    env:
+      UPSTREAM_BASE: "http://127.0.0.1:8001"
+      UPSTREAM_PATH: "/v1/chat/completions"
+      UPSTREAM_MODEL: "Qwen3-VL-8B-Instruct"
+      PROXY_MODEL: "instruct-clean"
+
+      CONCURRENCY: "32"
+      TIMEOUT_CONNECT_S: "10"
+      TIMEOUT_READ_S: "900"
+      TIMEOUT_WRITE_S: "30"
+      TIMEOUT_POOL_S: "10"
+      UPSTREAM_MAX_RETRIES: "2"
+      UPSTREAM_RETRY_BACKOFF_S: "0.6"
+
+      EMPTY_FALLBACK: "unknown"
+      BENCHMARK_SAFE: "1"
+      BENCHMARK_SAFE_MODE: "auto"
+      MAX_FINAL_CHARS: "128"
+
+      DEBUG_INSTRUCT_CLEAN: "0"
+      DEBUG_INSTRUCT_CLEAN_LOGFILE: "./tmp/instruct_clean_debug.jsonl"
+      DEBUG_INSTRUCT_CLEAN_MAXLEN: "4000"
+      DEBUG_INSTRUCT_CLEAN_LOG_REQUEST: "1"
+      DEBUG_INSTRUCT_CLEAN_LOG_RESPONSE: "1"
+      
+  # =========================
+  # 4B thinking_clean (calls 8102)
+  # =========================
+  thinking_clean_4b:
+    kind: uvicorn
+    enable: true
+    module: run.thinking_clean:app
+    host: 0.0.0.0
+    port_ref: thinking_clean_4b
+    workers: 1
+    env:
+      UPSTREAM_BASE: "http://127.0.0.1:8102"
+      UPSTREAM_PATH: "/v1/chat/completions"
+      UPSTREAM_MODEL: "Qwen3-VL-4B-Thinking"
+      PROXY_MODEL: "thinking-clean-4b"
+      STRIP_MODE: "auto"
+
+      CONCURRENCY: "32"
+      TIMEOUT_S: "180"
+
+      EMPTY_FALLBACK: "unknown"
+      BENCHMARK_SAFE: "1"
+      BENCHMARK_SAFE_MODE: "auto"
+      MAX_FINAL_CHARS: "256"
+
+  # =========================
+  # 4B instruct_clean (calls 8101)
+  # =========================
+  instruct_clean_4b:
+    kind: uvicorn
+    enable: true
+    module: run.instruct_clean:app
+    host: 0.0.0.0
+    port_ref: instruct_clean_4b
+    workers: 1
+    env:
+      UPSTREAM_BASE: "http://127.0.0.1:8101"
+      UPSTREAM_PATH: "/v1/chat/completions"
+      UPSTREAM_MODEL: "Qwen3-VL-4B-Instruct"
+      PROXY_MODEL: "instruct-clean-4b"
+
+      CONCURRENCY: "32"
+      TIMEOUT_CONNECT_S: "10"
+      TIMEOUT_READ_S: "900"
+      TIMEOUT_WRITE_S: "30"
+      TIMEOUT_POOL_S: "10"
+
+      EMPTY_FALLBACK: "unknown"
+      BENCHMARK_SAFE: "1"
+      BENCHMARK_SAFE_MODE: "auto"
+      MAX_FINAL_CHARS: "128"
+      
+  # =========================
+  # 2B thinking_clean (calls 8202)
+  # =========================
+  thinking_clean_2b:
+    kind: uvicorn
+    enable: true
+    module: run.thinking_clean:app
+    host: 0.0.0.0
+    port_ref: thinking_clean_2b
+    workers: 1
+    env:
+      UPSTREAM_BASE: "http://127.0.0.1:8202"
+      UPSTREAM_PATH: "/v1/chat/completions"
+      UPSTREAM_MODEL: "Qwen3-VL-2B-Thinking"
+      PROXY_MODEL: "thinking-clean-2b"
+      STRIP_MODE: "auto"
+
+      CONCURRENCY: "32"
+      TIMEOUT_S: "180"
+
+      EMPTY_FALLBACK: "unknown"
+      BENCHMARK_SAFE: "1"
+      BENCHMARK_SAFE_MODE: "auto"
+      MAX_FINAL_CHARS: "256"
+
+  # =========================
+  # 2B instruct_clean (calls 8201)
+  # =========================
+  instruct_clean_2b:
+    kind: uvicorn
+    enable: true
+    module: run.instruct_clean:app
+    host: 0.0.0.0
+    port_ref: instruct_clean_2b
+    workers: 1
+    env:
+      UPSTREAM_BASE: "http://127.0.0.1:8201"
+      UPSTREAM_PATH: "/v1/chat/completions"
+      UPSTREAM_MODEL: "Qwen3-VL-2B-Instruct"
+      PROXY_MODEL: "instruct-clean-2b"
+
+      CONCURRENCY: "32"
+      TIMEOUT_CONNECT_S: "10"
+      TIMEOUT_READ_S: "900"
+      TIMEOUT_WRITE_S: "30"
+      TIMEOUT_POOL_S: "10"
+
+      EMPTY_FALLBACK: "unknown"
+      BENCHMARK_SAFE: "1"
+      BENCHMARK_SAFE_MODE: "auto"
+      MAX_FINAL_CHARS: "128"
+
+
+profiles:
+  # -------------------------
+  # Single services
+  # -------------------------
+  vllm_instruct:
+    services:
+      - vllm_qwen3_vl_8b_instruct
+
+  vllm_thinking:
+    services:
+      - vllm_qwen3_vl_8b_thinking
+
+  instruct_clean:
+    services:
+      - instruct_clean
+
+  thinking_clean:
+    services:
+      - thinking_clean
+
+  sam_amg:
+    services:
+      - sam_amg
+
+  proxy_qwen_sam:
+    services:
+      - proxy_qwen_sam
+
+  proxy_sap:
+    services:
+      - proxy_sap
+
+  sap_clean:
+    services:
+      - sap_clean
+
+  profiles:
+  # =========================
+  # 4B
+  # =========================
+  qwen3_vl_4b_instruct:
+    services:
+      - vllm_qwen3_vl_4b_instruct
+
+  qwen3_vl_4b_thinking:
+    services:
+      - vllm_qwen3_vl_4b_thinking
+
+  # =========================
+  # 2B
+  # =========================
+  qwen3_vl_2b_instruct:
+    services:
+      - vllm_qwen3_vl_2b_instruct
+
+  qwen3_vl_2b_thinking:
+    services:
+      - vllm_qwen3_vl_2b_thinking
+
+  
+  # =========================
+  # 4B clean
+  # =========================
+  instruct_clean_4b:
+    services:
+      - instruct_clean_4b
+
+  thinking_clean_4b:
+    services:
+      - thinking_clean_4b
+
+  # =========================
+  # 2B clean
+  # =========================
+  instruct_clean_2b:
+    services:
+      - instruct_clean_2b
+
+  thinking_clean_2b:
+    services:
+      - thinking_clean_2b
+
+  # -------------------------
+  # Common stacks
+  # -------------------------
+  qwen3_vl_8b_instruct:
+    services:
+      - vllm_qwen3_vl_8b_instruct
+
+  qwen3_vl_8b_thinking:
+    services:
+      - vllm_qwen3_vl_8b_thinking
+
+  thinking_eval_stack:
+    services:
+      - vllm_qwen3_vl_8b_thinking
+      - thinking_clean
+
+  sam_label_stack:
+    services:
+      - vllm_qwen3_vl_8b_instruct
+      - sam_amg
+      - proxy_qwen_sam
+
+  # -------------------------
+  # SAP stacks
+  # -------------------------
+  sap_core_stack:
+    services:
+      - vllm_qwen3_vl_8b_instruct
+      - sam_amg
+      - proxy_qwen_sam
+      - proxy_sap
+
+  sap_env_stack:
+    services:
+      - vllm_qwen3_vl_8b_instruct
+      - sam_amg
+
+  sap_core_only_stack:
+    services:
+      - proxy_qwen_sam
+      - proxy_sap
+      - sap_clean
+
+  full_sap_stack:
+    services:
+      - vllm_qwen3_vl_8b_instruct
+      - sam_amg
+      - proxy_qwen_sam
+      - proxy_sap
+      - sap_clean
+
+  # =========================
+  # SAP + 4B
+  # =========================
+  sap_core_stack_4b:
+    services:
+      - vllm_qwen3_vl_4b_instruct
+      - sam_amg
+      - proxy_qwen_sam
+      - proxy_sap
+      - sap_clean
+
+  # =========================
+  # SAP + 2B
+  # =========================
+  sap_core_stack_2b:
+    services:
+      - vllm_qwen3_vl_2b_instruct
+      - sam_amg
+      - proxy_qwen_sam
+      - proxy_sap
+      - sap_clean
+
+  # =========================
+  # Thinking eval stacks
+  # =========================
+  thinking_eval_stack_4b:
+    services:
+      - vllm_qwen3_vl_4b_thinking
+      - thinking_clean_4b
+
+  thinking_eval_stack_2b:
+    services:
+      - vllm_qwen3_vl_2b_thinking
+      - thinking_clean_2b
+
+  # -------------------------
+  # Everything (optional)
+  # -------------------------
+  all:
+    services:
+      - vllm_qwen3_vl_8b_instruct
+      - vllm_qwen3_vl_8b_thinking
+      - thinking_clean
+      - sam_amg
+      - proxy_qwen_sam
+      - proxy_sap
+      - sap_clean
+      - instruct_clean

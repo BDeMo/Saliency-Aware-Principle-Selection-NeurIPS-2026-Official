@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SAP scales vision-language reasoning over grounded principles instead of one increasingly text-dominated chain.">
+  <meta name="theme-color" content="#f4f1ea">
+  <meta property="og:title" content="SAP — Saliency-Aware Multi-Route Thinking">
+  <meta property="og:description" content="Scale vision-language inference over grounded reasoning behaviors, not one ever-longer chain.">
+  <meta property="og:type" content="website">
+  <title>SAP — Saliency-Aware Multi-Route Thinking</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="enhancements.css">
+  <style>
+    body { overflow-x: hidden; }
+    @media (max-width: 520px) {
+      .hero { width: 100%; overflow: hidden; }
+      .hero, .hero > *, .route-stack, .route-stack > div { min-width: 0; }
+      .hero h1 { font-size: 52px; line-height: .92; letter-spacing: -.055em; }
+      .hero-copy { width: calc(100vw - 44px); max-width: calc(100vw - 44px); font-size: 19px; line-height: 1.42; overflow-wrap: anywhere; }
+      .hero .eyebrow { max-width: 300px; letter-spacing: .11em; line-height: 1.5; }
+      .hero-actions { margin-bottom: 58px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scroll-progress" aria-hidden="true"><span id="scroll-progress-bar"></span></div>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="nav-shell">
+    <nav aria-label="Primary navigation">
+      <a class="mark" href="#top" aria-label="SAP home"><span>S</span>AP</a>
+      <div class="nav-links">
+        <a href="#idea">Idea</a>
+        <a href="#results">Results</a>
+        <a href="#paper">Paper</a>
+      </div>
+      <a class="repo-link" href="https://github.com/BDeMo/Saliency-Aware-Principle-Selection-NeurIPS-2026-Official">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero section-pad">
+      <div class="eyebrow">NeurIPS 2026 · Vision-language reasoning</div>
+      <h1>Reason wider.<br><em>Stay grounded.</em></h1>
+      <p class="hero-copy">Saliency-Aware Principle Selection scales inference over compact reasoning behaviors—not one ever-longer chain—and lets visual tools advise selection without writing the answer.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="paper.pdf">Read the paper</a>
+        <a class="button quiet" href="https://github.com/BDeMo/Saliency-Aware-Principle-Selection-NeurIPS-2026-Official">View source</a>
+      </div>
+      <div class="hero-facts" aria-label="Key properties of SAP">
+        <div><span>01</span><b>Training-free</b><small>No parameter updates</small></div>
+        <div><span>02</span><b>Tool-advisory</b><small>Tools select, never answer</small></div>
+        <div><span>03</span><b>Route-parallel</b><small>Wider without a longer serial chain</small></div>
+      </div>
+      <div class="hero-diagram" aria-label="A long reasoning chain loses visual support while SAP maintains grounded parallel routes">
+        <div class="signal-label">visual support</div>
+        <div class="chain-track">
+          <span class="image-node">image</span>
+          <span class="fading-node">reason</span>
+          <span class="fading-node">reason</span>
+          <span class="fading-node">reason</span>
+          <span class="fading-node weak">guess</span>
+        </div>
+        <div class="split-rule"><span>one long chain</span><span>SAP</span></div>
+        <div class="route-stack">
+          <div><b>principle 01</b><span>inspect → verify → answer</span></div>
+          <div><b>principle 02</b><span>localize → compare → answer</span></div>
+          <div><b>principle 03</b><span>test alternatives → answer</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="idea" class="narrative section-pad">
+      <div class="section-index">01 / THE PROBLEM</div>
+      <div class="narrative-grid">
+        <h2>More tokens do not necessarily mean more vision.</h2>
+        <div class="body-copy">
+          <p>A vision-language model sees the image at the start, but regenerates text at every step. As the chain grows, an early visual mistake can be repeated until it reads like evidence.</p>
+          <p>Directly inserting tool output is not a clean fix: one incorrect detection can become a premise for everything that follows. The real question is how an agent can use tools while remaining able to disagree with them.</p>
+        </div>
+      </div>
+      <div class="failure-strip reveal">
+        <div><span>01</span><b>Image encoded once</b><small>Visual evidence enters at the beginning.</small></div>
+        <div><span>02</span><b>Text accumulates</b><small>The trajectory becomes self-referential.</small></div>
+        <div><span>03</span><b>Error hardens</b><small>An unsupported object survives into the answer.</small></div>
+      </div>
+    </section>
+
+    <section class="method section-pad">
+      <div class="section-index">02 / THE SHIFT</div>
+      <div class="method-heading">
+        <h2>Search over <em>how to reason</em>, not just what token comes next.</h2>
+        <p>SAP evolves short principles. Each principle produces independent routes from the original image and prompt. A frozen grounding tool checks object support; agreement, diversity, and uncertainty help decide which behaviors survive.</p>
+      </div>
+      <div class="method-flow reveal">
+        <article><span class="step">1</span><h3>Propose</h3><p>A population of compact reasoning principles.</p></article>
+        <div class="connector" aria-hidden="true">→</div>
+        <article><span class="step">2</span><h3>Route</h3><p>Independent, parallel reasoning from the original input.</p></article>
+        <div class="connector" aria-hidden="true">→</div>
+        <article><span class="step">3</span><h3>Ground</h3><p>Check cited objects without letting tools write the answer.</p></article>
+        <div class="connector" aria-hidden="true">→</div>
+        <article><span class="step">4</span><h3>Evolve</h3><p>Retain stronger principles and form the next generation.</p></article>
+      </div>
+      <div class="principle-note reveal"><span>Core constraint</span><strong>The tool supplies selection evidence. The VLM keeps control of reasoning and answering.</strong></div>
+    </section>
+
+    <section id="results" class="results section-pad">
+      <div class="section-index">03 / RESULTS</div>
+      <div class="results-intro">
+        <h2>Grounding improves without giving up broad capability.</h2>
+        <p>All hallucination comparisons below use the same Qwen3-VL-8B stack, benchmark items, evaluator interfaces, and decoding budget. SAP values are averaged over three seeds.</p>
+      </div>
+
+      <article class="chart-card reveal" data-chart="hallucination">
+        <header><div><span class="chart-kicker">Object hallucination</span><h3>Higher visual fidelity across three evaluations</h3></div><div class="legend"><span class="dot muted"></span>Baselines <span class="dot sap"></span>SAP</div></header>
+        <div class="grouped-chart" role="img" aria-label="SAP scores 91.2 on POPE precision, 80.6 on HallusionBench, and 92.4 on AMBER-d, leading the evaluated baselines.">
+          <div class="metric-group" data-max="100">
+            <span class="result-callout">+1.6 <small>vs. best baseline</small></span>
+            <div class="bars">
+              <i style="--v:89.6" data-value="89.6"></i><i style="--v:87.4" data-value="87.4"></i><i style="--v:81.5" data-value="81.5"></i><i style="--v:79" data-value="79.0"></i><i style="--v:86.3" data-value="86.3"></i><i class="sap-bar" style="--v:91.2" data-value="91.2"></i>
+            </div><b>POPE precision</b>
+          </div>
+          <div class="metric-group" data-max="100">
+            <span class="result-callout">+7.3 <small>vs. best baseline</small></span>
+            <div class="bars">
+              <i style="--v:72.7" data-value="72.7"></i><i style="--v:72" data-value="72.0"></i><i style="--v:65.3" data-value="65.3"></i><i style="--v:64.3" data-value="64.3"></i><i style="--v:73.3" data-value="73.3"></i><i class="sap-bar" style="--v:80.6" data-value="80.6"></i>
+            </div><b>HallusionBench</b>
+          </div>
+          <div class="metric-group" data-max="100">
+            <span class="result-callout">+3.7 <small>vs. best baseline</small></span>
+            <div class="bars">
+              <i style="--v:88.7" data-value="88.7"></i><i style="--v:87.3" data-value="87.3"></i><i style="--v:83.3" data-value="83.3"></i><i style="--v:64" data-value="64.0"></i><i style="--v:78.7" data-value="78.7"></i><i class="sap-bar" style="--v:92.4" data-value="92.4"></i>
+            </div><b>AMBER-d</b>
+          </div>
+        </div>
+        <footer>Bars, left to right: Instruct, MFCD, M3ID, ICD, MaskCD, SAP. Higher is better.</footer>
+      </article>
+
+      <article class="chart-card compact reveal" data-chart="average">
+        <header><div><span class="chart-kicker">16-benchmark suite</span><h3>Average performance, excluding MME</h3></div><span class="delta">+1.2 vs. Instruct</span></header>
+        <div class="average-chart" role="img" aria-label="Average results: Instruct 75.4, long-chain Thinking 75.9, and SAP 76.6.">
+          <div class="avg-row"><span>Instruct</span><div><i style="--v:75.4"></i></div><b>75.4</b></div>
+          <div class="avg-row"><span>LongCoT Thinking</span><div><i style="--v:75.9"></i></div><b>75.9</b></div>
+          <div class="avg-row sap-row"><span>SAP</span><div><i style="--v:76.6"></i></div><b>76.6</b></div>
+        </div>
+        <footer>Reasoning, knowledge, OCR, documents, diagrams, and real-world imagery under matched backbone and inference-time decoding budget.</footer>
+      </article>
+
+      <div class="experiments-heading">
+        <span class="chart-kicker">Controlled experiments</span>
+        <h3>What makes the gain hold?</h3>
+        <p>The ablations isolate the effect of principles, evolutionary selection, and transfer beyond the default backbone.</p>
+      </div>
+
+      <div class="ablation-grid">
+        <article class="experiment-card">
+          <span class="experiment-number">A / DEPTH</span>
+          <h4>Principles matter more as the chain grows.</h4>
+          <p>The POPE gap is largest at full length, where an unconstrained chain drifts most.</p>
+          <svg class="depth-plot" viewBox="0 0 280 140" role="img" aria-label="POPE scores without principles decline from 84.6 to 78.9 as chain length grows, while scores with principles remain near 88.">
+            <line x1="18" y1="112" x2="266" y2="112"></line>
+            <polyline class="line-with" points="22,28 102,21 182,17 262,26"></polyline>
+            <polyline class="line-without" points="22,55 102,55 182,67 262,108"></polyline>
+            <g class="points with"><circle cx="22" cy="28" r="3"></circle><circle cx="102" cy="21" r="3"></circle><circle cx="182" cy="17" r="3"></circle><circle cx="262" cy="26" r="3"></circle></g>
+            <g class="points without"><circle cx="22" cy="55" r="3"></circle><circle cx="102" cy="55" r="3"></circle><circle cx="182" cy="67" r="3"></circle><circle cx="262" cy="108" r="3"></circle></g>
+            <g class="axis-labels"><text x="15" y="132">L/8</text><text x="95" y="132">L/4</text><text x="175" y="132">L/2</text><text x="258" y="132">L</text></g>
+          </svg>
+          <div class="mini-legend"><span class="with"></span>with principles <span class="without"></span>without</div>
+        </article>
+
+        <article class="experiment-card">
+          <span class="experiment-number">B / MODULES</span>
+          <h4>Routes and evolution are complementary.</h4>
+          <p>Removing either component loses the full configuration's average advantage.</p>
+          <div class="module-bars" role="img" aria-label="Average scores: Instruct 75.4, without evolution 73.4, without multi-route 73.0, full SAP 76.6, with summarizer 74.8.">
+            <div><span>Instruct</span><i style="--w:77%"></i><b>75.4</b></div>
+            <div><span>− evolution</span><i style="--w:49%"></i><b>73.4</b></div>
+            <div><span>− multi-route</span><i style="--w:43%"></i><b>73.0</b></div>
+            <div class="full"><span>Full SAP</span><i style="--w:94%"></i><b>76.6</b></div>
+            <div><span>summarizer</span><i style="--w:69%"></i><b>74.8</b></div>
+          </div>
+          <small class="zoom-note">Visual scale: 70–77; exact values shown.</small>
+        </article>
+
+        <article class="experiment-card">
+          <span class="experiment-number">C / TRANSFER</span>
+          <h4>The mechanism is not tied to one model.</h4>
+          <p>SAP transfers across architectures and helps every tested Qwen3-VL scale.</p>
+          <div class="transfer-list">
+            <div><span>InternVL3.5 · MMMU</span><p><s>74.6</s><b>75.3</b></p></div>
+            <div><span>DeepSeek-VL2 · MMMU</span><p><s>51.2</s><b>56.7</b></p></div>
+            <div><span>Qwen3-VL · 2B</span><p><s>60.4</s><b>66.6</b></p></div>
+            <div><span>Qwen3-VL · 30B</span><p><s>77.3</s><b>78.1</b></p></div>
+          </div>
+          <div class="transfer-key"><span>base</span><span>+ SAP</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="paper" class="paper section-pad reveal">
+      <div>
+        <span class="section-index">04 / PAPER</span>
+        <h2>Saliency-Aware Multi-Route Thinking</h2>
+        <p>Mingjia Shi · Yinhan He · Yaochen Zhu · Cassie Dong · Jundong Li</p>
+        <p class="affiliations">University of Virginia · Meta</p>
+      </div>
+      <div class="paper-actions">
+        <a class="button primary" href="paper.pdf">PDF</a>
+        <a class="button quiet" href="https://github.com/BDeMo/Saliency-Aware-Principle-Selection-NeurIPS-2026-Official">Source</a>
+        <button class="button quiet" id="cite-button" type="button">Copy citation</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><span>NeurIPS 2026</span><span>Built for clear, grounded reasoning.</span></footer>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+pyyaml
+fastapi
+uvicorn
+httpx
+pillow
+numpy
+transformers
+torch
+vllm
+evalscope
+torchvision
+requests
+tqdm
+
+git+https://github.com/open-compass/VLMEvalKit.git
+-e git+https://github.com/open-compass/evalscope.git#egg=evalscope
